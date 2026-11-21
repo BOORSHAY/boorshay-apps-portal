@@ -306,11 +306,6 @@ async function rejectPayment(paymentId: string) {
 
 // IS FUNCTION KE BAAD AAPKA PURANA CODE JAISE KA TAISA RAHEGA
 
-async function activatePaidLicense(
-  paymentId: string,
-  formData: FormData
-) {
-
   async function activatePaidLicense(
     paymentId: string,
     formData: FormData
