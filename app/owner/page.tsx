@@ -274,33 +274,42 @@ export default function OwnerPage() {
     setBusyId("");
   }
 
-  async function rejectPayment(paymentId: string) {
-    const confirmed = window.confirm(
-      "Are you sure you want to reject this payment?"
-    );
 
-    if (!confirmed) return;
+async function rejectPayment(paymentId: string) {
+  const confirmed = window.confirm(
+    "Are you sure you want to reject this payment?"
+  );
 
-    setBusyId(paymentId);
-    setMessage("");
+  if (!confirmed) return;
 
-    const supabase = createClient();
+  setBusyId(paymentId);
+  setMessage("");
 
-    const { error } = await supabase
-      .from("platform_payments")
-      .update({ status: "rejected" })
-      .eq("id", paymentId)
-      .eq("status", "pending");
+  const supabase = createClient();
 
-    if (error) {
-      setMessage("Payment rejection failed: " + error.message);
-    } else {
-      setMessage("Payment rejected.");
-      await loadOwnerPanel(false);
+  const { error } = await supabase.rpc(
+    "owner_reject_payment",
+    {
+      p_payment_id: paymentId,
     }
+  );
 
-    setBusyId("");
+  if (error) {
+    setMessage("Payment rejection failed: " + error.message);
+  } else {
+    setMessage("Payment rejected.");
+    await loadOwnerPanel(false);
   }
+
+  setBusyId("");
+}
+
+// IS FUNCTION KE BAAD AAPKA PURANA CODE JAISE KA TAISA RAHEGA
+
+async function activatePaidLicense(
+  paymentId: string,
+  formData: FormData
+) {
 
   async function activatePaidLicense(
     paymentId: string,
