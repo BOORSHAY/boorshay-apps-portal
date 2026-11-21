@@ -16,10 +16,22 @@ type Shop = {
   created_at: string;
 };
 
+type License = {
+  shop_id: string;
+  license_type: string;
+  status: string;
+  starts_at: string | null;
+  expires_at: string | null;
+  max_admin_devices: number;
+  max_cashier_devices: number;
+  offline_grace_days: number;
+};
+
 export default function OwnerPage() {
   const router = useRouter();
 
   const [shops, setShops] = useState<Shop[]>([]);
+  const [licenses, setLicenses] = useState<Record<string, License>>({});
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState("");
   const [busyId, setBusyId] = useState("");
@@ -55,8 +67,37 @@ export default function OwnerPage() {
 
       if (error) {
         setMessage("Could not load shops: " + error.message);
-      } else {
-        setShops((data || []) as Shop[]);
+        setLoading(false);
+        return;
+      }
+
+      const loadedShops = (data || []) as Shop[];
+      setShops(loadedShops);
+
+      if (loadedShops.length > 0) {
+        const shopIds = loadedShops.map((shop) => shop.id);
+
+        const { data: licenseData, error: licenseError } = await supabase
+          .from("platform_licenses")
+          .select(
+            "shop_id, license_type, status, starts_at, expires_at, max_admin_devices, max_cashier_devices, offline_grace_days"
+          )
+          .in("shop_id", shopIds);
+
+        if (licenseError) {
+          setMessage(
+            "Shops loaded, but licenses could not be loaded: " +
+              licenseError.message
+          );
+        } else {
+          const licenseMap: Record<string, License> = {};
+
+          (licenseData || []).forEach((license) => {
+            licenseMap[license.shop_id] = license as License;
+          });
+
+          setLicenses(licenseMap);
+        }
       }
 
       setLoading(false);
@@ -84,6 +125,7 @@ export default function OwnerPage() {
 
     if (!user) {
       router.replace("/login");
+      setBusyId("");
       return;
     }
 
@@ -104,6 +146,7 @@ export default function OwnerPage() {
           shop.id === shopId ? { ...shop, status } : shop
         )
       );
+
       setMessage(`Shop ${status} successfully.`);
     }
 
@@ -114,6 +157,15 @@ export default function OwnerPage() {
     const supabase = createClient();
     await supabase.auth.signOut();
     router.replace("/login");
+  }
+
+  function formatDate(date: string | null) {
+    if (!date) return "Not set";
+
+    return new Date(date).toLocaleString("en-PK", {
+      dateStyle: "medium",
+      timeStyle: "short",
+    });
   }
 
   if (loading) {
@@ -166,55 +218,110 @@ export default function OwnerPage() {
         {shops.length === 0 ? (
           <p>No shop registrations found.</p>
         ) : (
-          shops.map((shop) => (
-            <div key={shop.id} style={{
-              border: "1px solid #e2e8f0",
-              borderRadius: "9px",
-              padding: "18px",
-              marginBottom: "16px"
-            }}>
-              <h3 style={{ color: "#14213d" }}>{shop.shop_name}</h3>
+          shops.map((shop) => {
+            const license = licenses[shop.id];
 
-              <p>Contact: {shop.contact_name}</p>
-              <p>Mobile: {shop.phone}</p>
-              <p>WhatsApp: {shop.whatsapp || "Not provided"}</p>
-              <p>Address: {shop.address}</p>
-              <p style={{ marginTop: "8px" }}>
-                Status: <strong>{shop.status}</strong>
-              </p>
+            return (
+              <div key={shop.id} style={{
+                border: "1px solid #e2e8f0",
+                borderRadius: "9px",
+                padding: "18px",
+                marginBottom: "16px"
+              }}>
+                <h3 style={{ color: "#14213d" }}>{shop.shop_name}</h3>
 
-              {shop.status === "pending" && (
+                <p>Contact: {shop.contact_name}</p>
+                <p>Mobile: {shop.phone}</p>
+                <p>WhatsApp: {shop.whatsapp || "Not provided"}</p>
+                <p>Address: {shop.address}</p>
+
+                <p style={{ marginTop: "8px" }}>
+                  Shop Status: <strong>{shop.status}</strong>
+                </p>
+
+                {shop.status === "pending" && (
+                  <div style={{
+                    display: "flex",
+                    gap: "10px",
+                    marginTop: "16px",
+                    flexWrap: "wrap"
+                  }}>
+                    <button
+                      disabled={busyId === shop.id}
+                      onClick={() => updateShopStatus(shop.id, "approved")}
+                      style={{
+                        ...buttonStyle,
+                        background: "#167a45"
+                      }}
+                    >
+                      Approve
+                    </button>
+
+                    <button
+                      disabled={busyId === shop.id}
+                      onClick={() => updateShopStatus(shop.id, "rejected")}
+                      style={{
+                        ...buttonStyle,
+                        background: "#b42318"
+                      }}
+                    >
+                      Reject
+                    </button>
+                  </div>
+                )}
+
                 <div style={{
-                  display: "flex",
-                  gap: "10px",
-                  marginTop: "16px",
-                  flexWrap: "wrap"
+                  marginTop: "22px",
+                  padding: "16px",
+                  background: "#f8fafc",
+                  border: "1px solid #e2e8f0",
+                  borderRadius: "8px"
                 }}>
-                  <button
-                    disabled={busyId === shop.id}
-                    onClick={() => updateShopStatus(shop.id, "approved")}
-                    style={{
-                      ...buttonStyle,
-                      background: "#167a45"
-                    }}
-                  >
-                    Approve
-                  </button>
+                  <h3 style={{
+                    color: "#14213d",
+                    marginBottom: "12px"
+                  }}>
+                    License Information
+                  </h3>
 
-                  <button
-                    disabled={busyId === shop.id}
-                    onClick={() => updateShopStatus(shop.id, "rejected")}
-                    style={{
-                      ...buttonStyle,
-                      background: "#b42318"
-                    }}
-                  >
-                    Reject
-                  </button>
+                  {!license ? (
+                    <p>
+                      License Status: <strong>Not Created</strong>
+                    </p>
+                  ) : (
+                    <>
+                      <p>
+                        License Type: <strong>{license.license_type}</strong>
+                      </p>
+
+                      <p>
+                        License Status: <strong>{license.status}</strong>
+                      </p>
+
+                      <p>Start Date: {formatDate(license.starts_at)}</p>
+
+                      <p>Expiry Date: {formatDate(license.expires_at)}</p>
+
+                      <p>
+                        Admin Device Limit:{" "}
+                        <strong>{license.max_admin_devices}</strong>
+                      </p>
+
+                      <p>
+                        Cashier Device Limit:{" "}
+                        <strong>{license.max_cashier_devices}</strong>
+                      </p>
+
+                      <p>
+                        Offline Grace Days:{" "}
+                        <strong>{license.offline_grace_days}</strong>
+                      </p>
+                    </>
+                  )}
                 </div>
-              )}
-            </div>
-          ))
+              </div>
+            );
+          })
         )}
       </section>
     </main>
