@@ -42,7 +42,7 @@ export default function RegisterShopPage() {
           phone: phone,
           whatsapp: whatsapp,
           address: address,
-          status: "pending",
+          
         });
 
       if (error) {
