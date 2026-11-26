@@ -368,10 +368,10 @@ async function rejectPayment(paymentId: string) {
   }
 
   async function handleLogout() {
-    const supabase = createClient();
-    await supabase.auth.signOut();
-    router.replace("/login");
-  }
+  const supabase = createClient();
+  await supabase.auth.signOut();
+  router.replace("/login?role=owner");
+}
 
   function formatDate(date: string | null) {
     if (!date) return "Not set";
