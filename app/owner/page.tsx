@@ -467,7 +467,10 @@ async function rejectPayment(paymentId: string) {
                 <p>Mobile: {shop.phone}</p>
                 <p>WhatsApp: {shop.whatsapp || "Not provided"}</p>
                 <p>Address: {shop.address}</p>
-
+<p>
+  Registration Date:{" "}
+  <strong>{formatDate(shop.created_at)}</strong>
+</p>
                 <p style={{ marginTop: "8px" }}>
                   Shop Status: <strong>{shop.status}</strong>
                 </p>
