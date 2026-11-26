@@ -82,6 +82,17 @@ export default function HomePage() {
           }}>
             Customer Login
           </a>
+
+          <a href="/login?role=owner" style={{
+            background: "#c49a45",
+            color: "#14213d",
+            padding: "14px 28px",
+            borderRadius: "8px",
+            textDecoration: "none",
+            fontWeight: "bold"
+          }}>
+            Owner Login
+          </a>
         </div>
       </section>
 
