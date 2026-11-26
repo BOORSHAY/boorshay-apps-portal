@@ -1,18 +1,19 @@
 
 "use client";
-
+import { useRouter } from "next/navigation";
 import { useState, useRef } from "react";
 import { Turnstile } from "@marsidev/react-turnstile";
 import { createClient } from "@/lib/supabase/client";
 
 export default function LoginPage() {
+  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
   const [captchaToken, setCaptchaToken] = useState("");
   const turnstileRef = useRef<any>(null);
-
+  
   async function handleLogin(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setMessage("");
@@ -37,8 +38,10 @@ export default function LoginPage() {
 
       if (error) {
         setMessage(error.message);
-      } else {
+            } else {
         setMessage("Login successful!");
+        router.push("/dashboard");
+        router.refresh();
       }
     } catch {
       setMessage("Login failed. Please try again.");
