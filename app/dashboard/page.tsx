@@ -123,6 +123,28 @@ export default function DashboardPage() {
             You have not registered a shop yet.
           </p>
         ) : (
+      {shops.length === 0 ? (
+  <div>
+    <p style={{ color: "#64748b", marginBottom: "18px" }}>
+      You have not registered a shop yet.
+    </p>
+
+    <button
+      onClick={() => router.push("/register-shop")}
+      style={{
+        padding: "12px 22px",
+        background: "#14213d",
+        color: "white",
+        border: "none",
+        borderRadius: "7px",
+        cursor: "pointer",
+        fontWeight: "bold"
+      }}
+    >
+      Register Your Shop
+    </button>
+  </div>
+) : (
           shops.map((shop) => (
             <div key={shop.id} style={{
               padding: "16px",
