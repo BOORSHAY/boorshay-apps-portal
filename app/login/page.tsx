@@ -1,19 +1,28 @@
 
 "use client";
+
 import { useRouter } from "next/navigation";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Turnstile } from "@marsidev/react-turnstile";
 import { createClient } from "@/lib/supabase/client";
 
 export default function LoginPage() {
   const router = useRouter();
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
   const [captchaToken, setCaptchaToken] = useState("");
+  const [isOwnerLogin, setIsOwnerLogin] = useState(false);
+
   const turnstileRef = useRef<any>(null);
-  
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    setIsOwnerLogin(params.get("role") === "owner");
+  }, []);
+
   async function handleLogin(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setMessage("");
@@ -28,7 +37,7 @@ export default function LoginPage() {
     try {
       const supabase = createClient();
 
-      const { error } = await supabase.auth.signInWithPassword({
+      const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
         options: {
@@ -38,9 +47,29 @@ export default function LoginPage() {
 
       if (error) {
         setMessage(error.message);
-            } else {
+      } else if (isOwnerLogin) {
+        const { data: owner, error: ownerError } = await supabase
+          .from("platform_owners")
+          .select("user_id")
+          .eq("user_id", data.user.id)
+          .maybeSingle();
+
+        if (ownerError || !owner) {
+          await supabase.auth.signOut();
+
+          setMessage(
+            ownerError
+              ? "Owner access could not be verified. Please try again."
+              : "Access denied. Owner account required."
+          );
+        } else {
+          setMessage("Owner login successful!");
+          router.replace("/owner");
+          router.refresh();
+        }
+      } else {
         setMessage("Login successful!");
-        router.push("/dashboard");
+        router.replace("/dashboard");
         router.refresh();
       }
     } catch {
@@ -69,7 +98,7 @@ export default function LoginPage() {
         boxShadow: "0 4px 20px rgba(0,0,0,0.08)"
       }}>
         <h1 style={{ color: "#14213d", marginBottom: "10px" }}>
-          Customer Login
+          {isOwnerLogin ? "Owner Login" : "Customer Login"}
         </h1>
 
         <p style={{ color: "#64748b", marginBottom: "24px" }}>
