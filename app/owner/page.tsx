@@ -384,11 +384,18 @@ async function rejectPayment(paymentId: string) {
   }
 
   const searchText = shopSearch.trim().toLowerCase();
+  const searchDigits = shopSearch.replace(/\D/g, "");
 
   const filteredShops = shops.filter((shop) => {
+    const phoneDigits = (shop.phone || "").replace(/\D/g, "");
+    const whatsappDigits = (shop.whatsapp || "").replace(/\D/g, "");
+
     return (
       shop.shop_name.toLowerCase().includes(searchText) ||
-      shop.contact_name.toLowerCase().includes(searchText)
+      shop.contact_name.toLowerCase().includes(searchText) ||
+      (searchDigits.length > 0 &&
+        (phoneDigits.includes(searchDigits) ||
+          whatsappDigits.includes(searchDigits)))
     );
   });
 
