@@ -47,6 +47,7 @@ export default function OwnerPage() {
   const router = useRouter();
 
   const [shops, setShops] = useState<Shop[]>([]);
+  const [shopSearch, setShopSearch] = useState("");
   const [licenses, setLicenses] = useState<Record<string, License>>({});
   const [payments, setPayments] = useState<Payment[]>([]);
   const [loading, setLoading] = useState(true);
@@ -382,6 +383,15 @@ async function rejectPayment(paymentId: string) {
     });
   }
 
+  const searchText = shopSearch.trim().toLowerCase();
+
+  const filteredShops = shops.filter((shop) => {
+    return (
+      shop.shop_name.toLowerCase().includes(searchText) ||
+      shop.contact_name.toLowerCase().includes(searchText)
+    );
+  });
+
   if (loading) {
     return <main style={{ padding: "40px" }}>Loading Owner Panel...</main>;
   }
@@ -448,8 +458,23 @@ async function rejectPayment(paymentId: string) {
         {shops.length === 0 ? (
           <p>No shop registrations found.</p>
         ) : (
-          shops.map((shop) => {
-            const license = licenses[shop.id];
+          <>
+            <div style={{ marginBottom: "18px" }}>
+              <input
+                type="text"
+                placeholder="Search shop name or contact person..."
+                value={shopSearch}
+                onChange={(event) => setShopSearch(event.target.value)}
+                style={inputStyle}
+              />
+            </div>
+
+            {filteredShops.length === 0 ? (
+              <p>No matching shops found.</p>
+            ) : (
+              filteredShops.map((shop) => {
+    
+    const license = licenses[shop.id];
 
             const shopPayments = license
               ? payments.filter(
@@ -804,8 +829,10 @@ async function rejectPayment(paymentId: string) {
                   </div>
                 )}
               </div>
-            );
-          })
+              );
+              })
+            )}
+          </>
         )}
       </section>
     </main>
